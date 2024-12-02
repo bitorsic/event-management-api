@@ -5,6 +5,8 @@ app.use(express.json());
 require("dotenv").config();
 const mongoose = require("mongoose");
 
+app.use('/api/auth', require('./routes/auth'));
+
 (async () => {
 	try {
 		console.log("[+] Connecting to MongoDB...");

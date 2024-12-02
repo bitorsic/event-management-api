@@ -12,4 +12,4 @@ const eventSchema = new mongoose.Schema({
 	managers: [String],
 });
 
-module.exports = mongoose.Model("events", eventSchema);
+module.exports = mongoose.model("events", eventSchema);
