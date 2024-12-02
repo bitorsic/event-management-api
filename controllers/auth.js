@@ -21,6 +21,29 @@ const register = async (req, res) => {
 	}
 }
 
+const login = async (req, res) => {
+	try {
+		const user = await users.findById(req.body.email);
+
+		if (!user) throw 400;
+		if (!await bcrypt.compare(req.body.password, user.password)) throw 403;
+
+		const token = jwt.sign(
+			{ email: user._id },
+			process.env.JWT_SECRET,
+			{ expiresIn: "15m"},
+		)
+
+		res.status(200).send({ token });
+	} catch (e) {
+		let code = 500, message = e.message;
+		if (e == 400) { code = e, message = "User not found" }
+		if (e == 403) { code = e, message = "Incorrect password" }
+		res.status(code).send({ message });
+	}
+}
+
 module.exports = {
 	register,
+	login,
 }

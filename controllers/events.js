@@ -1,0 +1,1 @@
+const { users, events } = require("../models");
