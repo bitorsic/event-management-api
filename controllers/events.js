@@ -151,6 +151,10 @@ const addRemoveManager = async (req, res) => {
 			return res.status(403).send({ message: "Event not found / Access Denied" });
 		}
 
+		if (event.attendees.includes(req.query.email)) {
+			return res.status(400).send({ message: "Attendee cannot be a manager" });
+		}
+
 		// add manager
 		if (!event.managers.includes(req.query.email)) {
 			event.managers.push(req.query.email);
