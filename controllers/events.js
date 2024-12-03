@@ -64,13 +64,10 @@ const update = async (req, res) => {
 
 const remove = async (req, res) => {
 	try {
-		const deletedEvent = await events.findOneAndDelete(
-			{
-				_id: req.params.id,
-				managers: { $in: req.user.email },
-			},
-			req.body
-		)
+		const deletedEvent = await events.findOneAndDelete({
+			_id: req.params.id,
+			managers: { $in: req.user.email },
+		})
 
 		if (!deletedEvent) {
 			return res.status(403).send({ message: "Event not found / Access Denied" });
@@ -99,6 +96,15 @@ const attendance = async (req, res) => {
 		// join
 		if (!event.attendees.includes(req.user.email)) {
 			event.attendees.push(req.user.email);
+			
+			const updatedUser = await users.findByIdAndUpdate(req.user.email, {
+				$push: { attending: event._id }
+			});
+			
+			if (!updatedUser) {
+				return res.status(404).send({ message: "User not found" });
+			}
+			
 			await event.save();
 
 			return res.status(200).send({ 
@@ -107,12 +113,81 @@ const attendance = async (req, res) => {
 		}
 
 		// leave
-		event.attendees.pop(req.user.email);
+		const index = event.attendees.indexOf(req.user.email);
+		event.attendees.splice(index, 1);
+
+		const updatedUser = await users.findByIdAndUpdate(req.user.email, {
+			$pull: { attending: event._id }
+		});
+		
+		if (!updatedUser) {
+			return res.status(404).send({ message: "User not found" });
+		}
+
 		await event.save();
 
 		res.status(200).send({ 
 			message: `Successfully left the event: ${event.title}`
 		});
+	} catch (e) {
+		res.status(500).send({ message: e.message });
+	}
+}
+
+const addRemoveManager = async (req, res) => {
+	try {
+		if (req.query.email === req.user.email) {
+			return res.status(400).send({ 
+				message: "Cannot add/remove yourself from managers" 
+			});
+		}
+
+		const event = await events.findOne({
+			_id: req.params.id,
+			managers: { $in: req.user.email },
+		})
+
+		if (!event) {
+			return res.status(403).send({ message: "Event not found / Access Denied" });
+		}
+
+		// add manager
+		if (!event.managers.includes(req.query.email)) {
+			event.managers.push(req.query.email);
+
+			const updatedUser = await users.findByIdAndUpdate(req.query.email, {
+				$push: { manages: event._id }
+			});
+			
+			if (!updatedUser) {
+				return res.status(404).send({ message: "User not found" });
+			}
+
+			await event.save();
+
+			return res.status(200).send({ 
+				message: `Successfully added ${updatedUser._id} as a manager for the event: ${event.title}`
+			});
+		}
+
+		// remove manager
+		const index = event.managers.indexOf(req.query.email);
+		event.managers.splice(index, 1);
+
+		const updatedUser = await users.findByIdAndUpdate(req.query.email, {
+			$pull: { manages: event._id }
+		});
+		
+		if (!updatedUser) {
+			return res.status(404).send({ message: "User not found" });
+		}
+
+		await event.save();
+
+		res.status(200).send({ 
+			message: `Successfully removed ${updatedUser._id} as a manager from the event: ${event.title}`
+		});
+
 	} catch (e) {
 		res.status(500).send({ message: e.message });
 	}
@@ -124,4 +199,5 @@ module.exports = {
 	update,
 	remove,
 	attendance,
+	addRemoveManager,
 }
