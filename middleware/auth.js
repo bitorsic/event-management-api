@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-const { users } = require("../models");
 
 const verifyToken = async (req, res, next) => {
 	try {
@@ -7,16 +6,12 @@ const verifyToken = async (req, res, next) => {
 		if (!token) throw 403;
 
 		token = token.split(' ')[1];
-		const decoded = jwt.verify(token, process.env.JWT_SECRET);
-		
-		req.user = await users.findById(decoded.email, '_id').lean();
-		if (!req.user) throw 401;
+		const { email } = jwt.verify(token, process.env.JWT_SECRET);
 
-		req.user.email = req.user._id; delete req.user._id;
-		req.user.type = decoded.type;
+		req.user = { email };
 		next();
 	} catch (e) {
-		let code = 500, message = e.message;
+		let code = 401, message = "Invalid Token";
 		if (e == 403) { code = e, message = "Not logged in" }
 		if (e == 401) code = e;
 		res.status(code).send({ message });
