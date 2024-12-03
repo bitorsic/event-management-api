@@ -40,7 +40,7 @@ const update = async (req, res) => {
 		const keys = Object.keys(req.body);
 
 		if (keys.includes("attendees") || keys.includes("managers")) {
-			return res.status(403).send({ message: "Cannot update attendees or managers" });
+			return res.status(400).send({ message: "Cannot update attendees or managers" });
 		}
 
 		const updatedEvent = await events.findOneAndUpdate(
@@ -82,9 +82,46 @@ const remove = async (req, res) => {
 	}
 }
 
+const attendance = async (req, res) => {
+	try {
+		const event = await events.findById(req.params.id);
+
+		if (!event) {
+			return res.status(400).send({ 
+				message: "Event with given ID not found" 
+			});
+		}
+
+		if (event.managers.includes(req.user.email)) {
+			return res.status(400).send({ message: "Manager cannot be an attendee" });
+		}
+
+		// join
+		if (!event.attendees.includes(req.user.email)) {
+			event.attendees.push(req.user.email);
+			await event.save();
+
+			return res.status(200).send({ 
+				message: `Successfully joined the event: ${event.title}`
+			});
+		}
+
+		// leave
+		event.attendees.pop(req.user.email);
+		await event.save();
+
+		res.status(200).send({ 
+			message: `Successfully left the event: ${event.title}`
+		});
+	} catch (e) {
+		res.status(500).send({ message: e.message });
+	}
+}
+
 module.exports = {
 	create,
 	read,
 	update,
 	remove,
+	attendance,
 }

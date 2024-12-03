@@ -6,5 +6,6 @@ router.post("/", verifyToken, controller.create);
 router.get("/", verifyToken, controller.read);
 router.put("/:id", verifyToken, controller.update);
 router.delete("/:id", verifyToken, controller.remove);
+router.put("/attendance/:id", verifyToken, controller.attendance);
 
 module.exports = router;
