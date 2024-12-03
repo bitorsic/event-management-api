@@ -28,6 +28,21 @@ const read = async (req, res) => {
 			const event = await events.findById(req.query.id);
 			return res.status(200).send(event);
 		}
+
+		if (req.query.flag === "attending") {
+			const allEvents = await events.find({
+				attendees: { $in: req.user.email },
+			}).sort({ date: -1 });
+			return res.status(200).send(allEvents);
+		}
+
+		if (req.query.flag === "manages") {
+			const allEvents = await events.find({
+				managers: { $in: req.user.email },
+			}).sort({ date: -1 });
+			return res.status(200).send(allEvents);
+		}
+
 		const allEvents = await events.find().sort({ date: -1 });
 		res.status(200).send(allEvents);
 	} catch (e) {
