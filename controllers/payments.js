@@ -1,5 +1,5 @@
 const Razorpay = require("razorpay");
-const { users, events } = require("../models");
+const { users, events, payments } = require("../models");
 
 const razorpay = new Razorpay({
 	key_id: process.env.RAZORPAY_ID,
@@ -41,6 +41,16 @@ const join = async (req, res) => {
 		}
 
 		const order = await razorpay.orders.create(options);
+		
+		const payment = {
+			orderId: order.id,
+			email: req.user.email,
+			eventId: event._id,
+			status: order.status,
+		}
+
+		await payments.create(payment);
+
 		res.status(201).send(order);
 	} catch (e) {
 		res.status(500).send({ message: e.message });
