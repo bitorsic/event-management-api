@@ -94,61 +94,6 @@ const remove = async (req, res) => {
 	}
 }
 
-const attendance = async (req, res) => {
-	try {
-		const event = await events.findById(req.params.id);
-
-		if (!event) {
-			return res.status(400).send({ 
-				message: "Event with given ID not found" 
-			});
-		}
-
-		if (event.managers.includes(req.user.email)) {
-			return res.status(400).send({ message: "Manager cannot be an attendee" });
-		}
-
-		// join
-		if (!event.attendees.includes(req.user.email)) {
-			event.attendees.push(req.user.email);
-			
-			const updatedUser = await users.findByIdAndUpdate(req.user.email, {
-				$push: { attending: event._id }
-			});
-			
-			if (!updatedUser) {
-				return res.status(404).send({ message: "User not found" });
-			}
-			
-			await event.save();
-
-			return res.status(200).send({ 
-				message: `Successfully joined the event: ${event.title}`
-			});
-		}
-
-		// leave
-		const index = event.attendees.indexOf(req.user.email);
-		event.attendees.splice(index, 1);
-
-		const updatedUser = await users.findByIdAndUpdate(req.user.email, {
-			$pull: { attending: event._id }
-		});
-		
-		if (!updatedUser) {
-			return res.status(404).send({ message: "User not found" });
-		}
-
-		await event.save();
-
-		res.status(200).send({ 
-			message: `Successfully left the event: ${event.title}`
-		});
-	} catch (e) {
-		res.status(500).send({ message: e.message });
-	}
-}
-
 const addRemoveManager = async (req, res) => {
 	try {
 		if (req.query.email === req.user.email) {
@@ -217,6 +162,5 @@ module.exports = {
 	read,
 	update,
 	remove,
-	attendance,
 	addRemoveManager,
 }
