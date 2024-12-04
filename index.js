@@ -5,6 +5,8 @@ app.use(express.json());
 require("dotenv").config();
 const mongoose = require("mongoose");
 
+app.use(express.static("public"));
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/payments', require('./routes/payments'));

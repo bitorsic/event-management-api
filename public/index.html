@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Razorpay Payment</title>
+</head>
+<body>
+  <h1>Razorpay Payment Gateway Integration</h1>
+  <form id="payment-form">
+    <label for="eventId">Event ID:</label>
+    <input type="text" id="eventId" name="eventId" required>
+
+    <label for="jwt">JWT:</label>
+    <input type="text" id="jwt" name="jwt" required>
+
+    <button type="button" onclick="payNow()">Pay Now</button>
+  </form>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    async function payNow() {
+      const eventId = document.getElementById('eventId').value;
+      const jwt = document.getElementById('jwt').value;
+      
+      
+      // Create order by calling the server endpoint
+      const response = await fetch(`/api/payments/attendance/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${jwt}`
+        },
+      });
+
+      const order = await response.json();
+      console.log(order);
+
+      // Open Razorpay Checkout
+      const options = {
+        key: 'rzp_test_9xfwfBJHkHiw0J', // Replace with your Razorpay key_id
+        amount: order.amount, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+        currency: order.currency,
+        name: 'bitorsic Events',
+        description: order.notes.eventTitle,
+        order_id: order.id, // This is the order_id created in the backend
+        handler: function (response){
+          alert(response.razorpay_payment_id);
+          alert(response.razorpay_order_id);
+          alert(response.razorpay_signature)
+        },
+        prefill: {
+          name: 'Gaurav Kumar',
+          email: 'gaurav.kumar@example.com',
+          contact: '9999999999'
+        },
+        theme: {
+          color: '#F37254'
+        },
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', function (response){
+        alert(response.error.code);
+        alert(response.error.description);
+        alert(response.error.source);
+        alert(response.error.step);
+        alert(response.error.reason);
+        alert(response.error.metadata.order_id);
+        alert(response.error.metadata.payment_id);
+      });
+      rzp.open();
+    }
+  </script>
+</body>
+</html>

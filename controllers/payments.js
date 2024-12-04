@@ -38,6 +38,9 @@ const join = async (req, res) => {
 		const options = {
 			amount: event.entryFee * 100,
 			currency: "INR",
+			notes: {
+				eventTitle: event.title,
+			}
 		}
 
 		const order = await razorpay.orders.create(options);
