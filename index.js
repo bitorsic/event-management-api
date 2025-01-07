@@ -4,6 +4,7 @@ app.use(express.json());
 
 require("dotenv").config();
 const mongoose = require("mongoose");
+const cron = require("./cron/eventTitleCron")
 
 app.use(express.static("public"));
 
