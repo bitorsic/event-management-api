@@ -1,11 +1,14 @@
 const { users, events } = require("../models");
+const { PDFDocument, StandardFonts } = require("pdf-lib");
+const path = require('path');
+const fs = require("fs");
 
 const create = async (req, res) => {
 	try {
 		let event = req.body;
 
 		event.managers = [req.user.email];
-		
+
 		event = await events.create(event);
 
 		const updatedUser = await users.findByIdAndUpdate(req.user.email, {
@@ -88,7 +91,7 @@ const remove = async (req, res) => {
 			return res.status(403).send({ message: "Event not found / Access Denied" });
 		}
 
-		res.status(200).send({ message: "Event deleted successfully"});
+		res.status(200).send({ message: "Event deleted successfully" });
 	} catch (e) {
 		res.status(500).send({ message: e.message });
 	}
@@ -122,7 +125,7 @@ const addRemoveManager = async (req, res) => {
 			const updatedUser = await users.findByIdAndUpdate(req.query.email, {
 				$push: { manages: event._id }
 			});
-			
+
 			if (!updatedUser) {
 				return res.status(404).send({ message: "User not found" });
 			}
@@ -155,7 +158,33 @@ const addRemoveManager = async (req, res) => {
 	} catch (e) {
 		res.status(500).send({ message: e.message });
 	}
-}
+};
+
+const generateCertificate = async (req, res) => {
+	try {
+		const pdfPath = path.join(__dirname, '../assets/certificate_template.pdf');
+		let pdfBytes = fs.readFileSync(pdfPath);
+		const pdfDoc = await PDFDocument.load(pdfBytes);
+
+		const form = pdfDoc.getForm();
+
+		const inputField = form.getTextField("fullname");
+		const myFont = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+		inputField.updateAppearances(myFont);
+		inputField.setText("Yash Pradeep Jaiswal");
+		inputField.setFontSize(25);
+
+		pdfBytes = await pdfDoc.save();
+
+		res.status(200).set({
+			'Content-Type': "application/pdf",
+		});
+
+		res.end(Buffer.from(pdfBytes));
+	} catch (e) {
+		res.status(500).send(e.message);
+	}
+};
 
 module.exports = {
 	create,
@@ -163,4 +192,5 @@ module.exports = {
 	update,
 	remove,
 	addRemoveManager,
+	generateCertificate,
 }

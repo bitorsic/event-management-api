@@ -7,5 +7,6 @@ router.get("/", verifyToken, controller.read);
 router.put("/:id", verifyToken, controller.update);
 router.delete("/:id", verifyToken, controller.remove);
 router.put("/managers/:id", verifyToken, controller.addRemoveManager);
+router.post("/certificate", controller.generateCertificate);
 
 module.exports = router;
